@@ -1,58 +1,823 @@
-
 <!DOCTYPE html>
 <html lang="ur">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bright Home Builders Gojra - Apna Ghar Apni Shan</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:Arial,sans-serif;background:#fff8f0;line-height:1.6}
-.header{background:linear-gradient(135deg,#ff6600,#ff9900);color:white;padding:40px 20px;text-align:center}
-.header h1{font-size:32px;margin-bottom:10px}
-.box{background:white;margin:20px;padding:25px;border-radius:15px;box-shadow:0 4px 15px rgba(0,0,0,0.1);text-align:center}
-.box h2{color:#ff6600;margin-bottom:15px}
-.services{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:15px}
-.service{background:#fff8f0;padding:15px;border-radius:10px;border-left:4px solid #ff6600}
-.btn{background:#ff6600;color:white;padding:15px 35px;text-decoration:none;border-radius:30px;display:inline-block;font-weight:bold;margin:10px;font-size:18px}
-.btn:hover{background:#e65c00}
-.contact{background:#222;color:white}
-.whatsapp{background:#25D366}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bright Homes - Billing System</title>
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#ffffff">
+
+    <!-- html2canvas Library for Image Saving -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+    <style>
+        * { box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background: #f0f2f5; margin: 0; padding: 10px; padding-bottom: 75px; direction: rtl; }
+        
+        .action-buttons { 
+            position: fixed; bottom: 0; left: 0; width: 100%; background: #ffffff; 
+            padding: 8px 10px; box-shadow: 0 -4px 10px rgba(0,0,0,0.1); 
+            display: flex; gap: 6px; z-index: 1000; justify-content: center; flex-wrap: wrap;
+        }
+        .btn { flex: 1; padding: 8px 4px; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; font-size: 11px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-blue { background-color: #0066cc; }
+        .btn-green { background-color: #2e7d32; }
+        .btn-purple { background-color: #7b1fa2; }
+        .btn-orange { background-color: #e65100; }
+        .btn-red { background-color: #d32f2f; }
+        .btn-teal { background-color: #00796b; }
+        .btn-dark { background-color: #334155; }
+
+        .top-action-bar {
+            display: flex; gap: 4px; margin-bottom: 10px; background: #e2e8f0; padding: 6px; border-radius: 6px; flex-wrap: wrap;
+        }
+        .top-btn {
+            flex: 1; padding: 6px 2px; border: 1px solid #cbd5e1; background: #ffffff; color: #1e293b;
+            font-weight: bold; font-size: 10px; border-radius: 4px; cursor: pointer; text-align: center;
+        }
+
+        .invoice-card { background: white; padding: 12px; border: 2px solid #222; border-radius: 4px; max-width: 500px; margin: 0 auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        .header { text-align: center; border-bottom: 2px solid #222; padding-bottom: 6px; margin-bottom: 6px; }
+        .header h2 { margin: 0; color: #111; font-size: 18px; font-weight: bold; letter-spacing: 0.5px; }
+        .header h4 { margin: 3px 0; font-size: 10px; font-weight: bold; color: #333; }
+        .header p { margin: 2px 0; font-size: 10px; color: #444; }
+        
+        .proprietor { text-align: center; font-weight: bold; font-size: 12px; border-bottom: 1px solid #222; border-top: 1px solid #222; padding: 4px 0; margin-bottom: 4px; background: #f8fafc; }
+        .tagline { text-align: center; font-size: 10px; font-style: italic; margin-bottom: 8px; border-bottom: 1px dashed #666; padding-bottom: 4px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+        th, td { border: 1px solid #444; padding: 4px; text-align: center; font-size: 12px; }
+        th { background: #f9f9f9; }
+        input, select { width: 100%; padding: 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px; text-align: center; }
+        .qty-rate-box { display: flex; align-items: center; justify-content: center; gap: 3px; }
+        .item-qty, .item-rate { width: 42px !important; padding: 4px 1px; }
+        .btn-add { background: #2e7d32; color: white; border: none; padding: 8px; width: 100%; border-radius: 4px; font-weight: bold; margin-bottom: 8px; cursor: pointer; }
+        .btn-del { background: #d32f2f; color: white; border: none; border-radius: 3px; padding: 4px 6px; font-weight: bold; cursor: pointer; }
+        
+        .net-total-box { border: 2px solid #222; text-align: center; padding: 8px; margin: 8px 0; background: #fffdf0; }
+        .net-total-title { font-weight: bold; font-size: 13px; color: #222; }
+        .net-total-amount { font-size: 22px; font-weight: bold; color: #d97706; margin-top: 4px; }
+
+        .footer-container { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 25px; padding: 0 5px; }
+        .thank-you-box { text-align: left; font-size: 11px; color: #333; font-weight: bold; }
+        .signature-box { text-align: center; width: 180px; }
+        .sig-line { border-top: 1px solid #444; margin-bottom: 4px; }
+        .sig-name { font-weight: bold; font-size: 11px; color: #222; }
+        .sig-title { font-size: 10px; color: #666; }
+
+        .owner-section {
+            background-color: #fef08a; border: 2px dashed #000; border-radius: 8px; padding: 10px; margin-top: 15px;
+        }
+        .owner-badge {
+            display: inline-block; background: #000; color: #fff; padding: 3px 10px; font-weight: 900; font-size: 11px; border-radius: 12px; margin-bottom: 6px;
+        }
+        .panel-box { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; margin-top: 8px; }
+        .stock-table, .history-table, .gen-table { width: 100%; border-collapse: collapse; margin-top: 6px; background: #fff; }
+        .stock-table th, .stock-table td, .history-table th, .history-table td, .gen-table th, .gen-table td { border: 1px solid #444; padding: 5px; font-size: 11px; text-align: center; }
+        .stock-table th { background-color: #fff3cd; font-weight: bold; }
+        .history-table th { background-color: #e2e8f0; font-weight: bold; }
+
+        .no-print-cut { border-top: 2px dashed #000; margin: 12px 0; position: relative; }
+        .no-print-cut::after { content: '✂️'; position: absolute; left: 10px; top: -12px; background: #ffffff; padding: 0 4px; }
+
+        .generating-image input, .generating-image select {
+            border: none !important; background: transparent !important; appearance: none; box-shadow: none; font-weight: bold;
+        }
+        .generating-image .no-print-col { display: none !important; }
+
+        @media print {
+            .action-buttons, .top-action-bar, .btn-add, .btn-del, .owner-section, .no-print-cut, .no-print, .no-print-col { display: none !important; }
+            body { background: white; padding: 0; }
+            .invoice-card { border: none; box-shadow: none; max-width: 100%; width: 100%; }
+            input, select { border: none !important; appearance: none; background: transparent; font-weight: bold; }
+        }
+    </style>
 </head>
 <body>
-<div class="header">
-<h1>🏠 Bright Home Builders Gojra</h1>
-<p style="font-size:20px">Apna Ghar Apni Shan</p>
-<p>Gojra ka No.1 Home Construction Service</p>
+
+<div class="invoice-card" id="invoice">
+    <!-- Top Action Bar -->
+    <div class="top-action-bar no-print">
+        <button class="top-btn" onclick="window.print()">🖨️ پرنٹ</button>
+        <button class="top-btn" onclick="saveCustomerBillAsImage()" style="background:#00796b; color:#fff;">🖼️ گیلری بل</button>
+        <button class="top-btn" onclick="printRawBT()">📱 RawBT</button>
+        <button class="top-btn" onclick="saveBillAndSync()" style="background:#2e7d32; color:#fff;">💾 سیو اینڈ نیا</button>
+        <button class="top-btn" onclick="resetForm()" style="background:#fee2e2; color:#dc2626;">+ نیا بل</button>
+    </div>
+
+    <!-- Live Sync Status Banner -->
+    <div id="syncStatus" class="no-print" style="font-size: 11px; color: #2e7d32; font-weight: bold; text-align: center; margin-bottom: 6px; background: #e6f4ea; padding: 4px; border-radius: 4px;">فائر بیس لائیو سنک فعال ہے 🟢</div>
+
+    <div id="printableBillArea">
+        <div class="header">
+            <h2>BRIGHT HOMES</h2>
+            <h4>BUILDER & BUILDING CONSTRUCTION MATERIALS COMPANY</h4>
+            <p>Office: Main Toba Road, Near Railway Station, Gojra[span_0](start_span)[span_0](end_span)</p>
+        </div>
+        
+        <div class="proprietor">Proprietor: MIAN IMRAN RAMAY | 03001070298[span_1](start_span)[span_1](end_span)</div>
+        <div class="tagline">We deal in All kinds of construction materials[span_2](start_span)[span_2](end_span)</div>
+
+        <table>
+            <tr>
+                <th style="width: 30%;">Bill No / بل نمبر:</th>
+                <td><input type="text" id="billNo" readonly style="background:#f8f9fa; font-weight:bold; color:#b45309;"></td>
+                <th style="width: 25%;">بل نمبر</th>
+            </tr>
+            <tr>
+                <th>Date:</th>
+                <td><input type="date" id="billDate"></td>
+                <th>تاریخ</th>
+            </tr>
+            <tr>
+                <th>Customer Name:</th>
+                <td><input type="text" id="cName" placeholder="نام درج کریں"></td>
+                <th>کسٹمر نام</th>
+            </tr>
+            <tr>
+                <th>Mobile:</th>
+                <td><input type="tel" id="cMobile" placeholder="موبائل نمبر"></td>
+                <th>موبائل نمبر</th>
+            </tr>
+            <tr>
+                <th>Address:</th>
+                <td><input type="text" id="cAddress" placeholder="پتہ / سائٹ"></td>
+                <th>پتہ</th>
+            </tr>
+            <tr>
+                <th>Gaari No:</th>
+                <td><input type="text" id="cGaari" placeholder="گاڑی نمبر"></td>
+                <th>گاڑی نمبر</th>
+            </tr>
+        </table>
+
+        <table id="itemsTable">
+            <thead>
+                <tr>
+                    <th style="width: 38%;">Description / تفصیل</th>
+                    <th style="width: 32%;">Qty x Rate</th>
+                    <th style="width: 20%;">Amount (Rs)</th>
+                    <th style="width: 10%; display:none;" class="no-print-col">حذف</th>
+                </tr>
+            </thead>
+            <tbody id="itemsBody">
+                <tr class="item-row">
+                    <td>
+                        <select class="item-select" onchange="calculateTotal()">
+                            <option value="" disabled selected>آئٹم منتخب کریں</option>
+                            <option value="Awal Eent (اول اینٹ)">Awal Eent (اول اینٹ)</option>
+                            <option value="Doem Eent (دوئم اینٹ)">Doem Eent (دوئم اینٹ)</option>
+                            <option value="Dara Eent (دڑا اینٹ)">Dara Eent (دڑا اینٹ)</option>
+                            <option value="Rora (روڑا)">Rora (روڑا)</option>
+                            <option value="Tile (ٹائیل)">Tile (ٹائیل)</option>
+                            <option value="Cement (سیمنٹ)">Cement (سیمنٹ)</option>
+                            <option value="Bajri (بجری)">Bajri (بجری)</option>
+                            <option value="Ret (ریت)">Ret (ریت)</option>
+                        </select>
+                    </td>
+                    <td>
+                        <div class="qty-rate-box">
+                            <input type="number" class="item-qty" placeholder="تعداد" oninput="calculateTotal()"> 
+                            <span>×</span> 
+                            <input type="number" class="item-rate" placeholder="نرخ" oninput="calculateTotal()">
+                        </div>
+                    </td>
+                    <td class="item-amount" style="font-weight:bold;">Rs 0</td>
+                    <td class="no-print no-print-col"><button class="btn-del" onclick="deleteRow(this)">❌</button></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <button class="btn-add no-print no-print-col" onclick="addItem()">+ اور آئٹم شامل کریں (Add More Item)</button>
+
+        <table>
+            <tr>
+                <td style="width: 50%; font-weight: bold;">Gaari Rent / گاڑی کرایہ</td>
+                <td style="width: 50%;"><input type="number" id="rent" placeholder="0" oninput="calculateTotal()"></td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold;">Loading / Mazdoori / مزدوری</td>
+                <td><input type="number" id="labor" placeholder="0" oninput="calculateTotal()"></td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold;">Discount / Other / رعایت</td>
+                <td><input type="number" id="discount" placeholder="0" oninput="calculateTotal()"></td>
+            </tr>
+        </table>
+
+        <div class="net-total-box">
+            <div class="net-total-title">NET TOTAL AMOUNT / کل رقم</div>
+            <div class="net-total-amount" id="grandTotal">Rs 0</div>
+            <div id="quickProfitView" style="font-size: 11px; color: #166534; margin-top: 4px; font-weight: bold;">اندازاً منافع: Rs 0</div>
+        </div>
+
+        <table>
+            <tr>
+                <td style="width: 50%; font-weight: bold;">Paid Amount / وصول شدہ رقم</td>
+                <td style="width: 50%;"><input type="number" id="paidAmount" placeholder="0" oninput="calculateTotal()"></td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold;">Remaining Balance / بقایا رقم</td>
+                <td id="remainingBalance" style="font-size: 14px; font-weight: bold; color: #d32f2f;">Rs 0</td>
+            </tr>
+        </table>
+
+        <div class="footer-container">
+            <div class="thank-you-box">Thanks for your trust Bright Homes[span_3](start_span)[span_3](end_span)</div>
+            <div class="signature-box">
+                <div class="sig-line"></div>
+                <div class="sig-name">MIAN IMRAN RAMAY[span_4](start_span)[span_4](end_span)</div>
+                <div class="sig-title">Authorized Signature</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="no-print-cut"></div>
+
+    <!-- OWNER PANEL WITH ALL NEW MODULES AND SHOW/HIDE -->
+    <div class="owner-section no-print">
+        <div style="text-align: center;"><div class="owner-badge">OWNER PANEL - ADVANCED MANAGEMENT</div></div>
+        
+        <!-- 1. STOCK SECTION -->
+        <button class="btn btn-blue" onclick="toggleSection('stockContainer')" style="margin-bottom: 6px; width: 100%;">📦 اسٹاک رپورٹ (Show/Hide Stock)</button>
+        <div id="stockContainer" class="panel-box" style="display: block;">
+            <div id="stockReportArea">
+                <table class="stock-table">
+                    <tr><th>آئٹم</th><th>موجودہ اسٹاک</th><th>درست کریں</th></tr>
+                    <tr><td>Awal Eent (اول اینٹ)</td><td id="stock_awal">0</td><td><button onclick="editStockDirect('Awal Eent (اول اینٹ)')" style="background:#0284c7; color:#fff; border:none; padding:2px 6px; border-radius:3px; font-size:9px; cursor:pointer;">✏️</button></td></tr>
+                    <tr><td>Doem Eent (دوئم اینٹ)</td><td id="stock_doem">0</td><td><button onclick="editStockDirect('Doem Eent (دوئم اینٹ)')" style="background:#0284c7; color:#fff; border:none; padding:2px 6px; border-radius:3px; font-size:9px; cursor:pointer;">✏️</button></td></tr>
+                    <tr><td>Dara Eent (دڑا اینٹ)</td><td id="stock_dara">0</td><td><button onclick="editStockDirect('Dara Eent (دڑا اینٹ)')" style="background:#0284c7; color:#fff; border:none; padding:2px 6px; border-radius:3px; font-size:9px; cursor:pointer;">✏️</button></td></tr>
+                    <tr><td>Rora (روڑا)</td><td id="stock_rora">0</td><td><button onclick="editStockDirect('Rora (روڑا)')" style="background:#0284c7; color:#fff; border:none; padding:2px 6px; border-radius:3px; font-size:9px; cursor:pointer;">✏️</button></td></tr>
+                    <tr><td>Tile (ٹائیل)</td><td id="stock_tile">0</td><td><button onclick="editStockDirect('Tile (ٹائیل)')" style="background:#0284c7; color:#fff; border:none; padding:2px 6px; border-radius:3px; font-size:9px; cursor:pointer;">✏️</button></td></tr>
+                    <tr><td>Cement (سیمنٹ)</td><td id="stock_cement">0</td><td><button onclick="editStockDirect('Cement (سیمنٹ)')" style="background:#0284c7; color:#fff; border:none; padding:2px 6px; border-radius:3px; font-size:9px; cursor:pointer;">✏️</button></td></tr>
+                    <tr><td>Bajri (بجری)</td><td id="stock_bajri">0</td><td><button onclick="editStockDirect('Bajri (بجری)')" style="background:#0284c7; color:#fff; border:none; padding:2px 6px; border-radius:3px; font-size:9px; cursor:pointer;">✏️</button></td></tr>
+                    <tr><td>Ret (ریت)</td><td id="stock_ret">0</td><td><button onclick="editStockDirect('Ret (ریت)')" style="background:#0284c7; color:#fff; border:none; padding:2px 6px; border-radius:3px; font-size:9px; cursor:pointer;">✏️</button></td></tr>
+                </table>
+            </div>
+            <div style="display: flex; gap: 4px; margin-top: 6px;">
+                <button class="btn btn-blue" onclick="printDailyReport()" style="font-size: 10px;">📄 پرنٹ اسٹاک</button>
+                <button class="btn btn-teal" onclick="saveStockReportAsImage()" style="font-size: 10px;">📷 گیلری اسٹاک</button>
+            </div>
+            <div style="margin-top: 8px; border-top: 1px dashed #cbd5e1; padding-top: 6px;">
+                <div style="font-weight: bold; font-size: 11px; margin-bottom: 4px; color: #b45309;">📥 اسٹاک ایڈجسٹمنٹ</div>
+                <div style="display: flex; gap: 4px; margin-bottom: 4px;">
+                    <select id="stockItem" style="font-size: 10px; flex: 1.5;">
+                        <option value="Awal Eent (اول اینٹ)">Awal Eent (اول اینٹ)</option>
+                        <option value="Doem Eent (دوئم اینٹ)">Doem Eent (دوئم اینٹ)</option>
+                        <option value="Dara Eent (دڑا اینٹ)">Dara Eent (دڑا اینٹ)</option>
+                        <option value="Rora (روڑا)">Rora (روڑا)</option>
+                        <option value="Tile (ٹائیل)">Tile (ٹائیل)</option>
+                        <option value="Cement (سیمنٹ)">Cement (سیمنٹ)</option>
+                        <option value="Bajri (بجری)">Bajri (بجری)</option>
+                        <option value="Ret (ریت)">Ret (ریت)</option>
+                    </select>
+                    <input type="number" id="stockQty" placeholder="تعداد" style="font-size: 10px; flex: 1;">
+                </div>
+                <div style="display: flex; gap: 4px;">
+                    <button class="btn btn-green" onclick="modifyStock('add')" style="font-size: 10px;">➕ نیا اسٹاک ایڈ کریں</button>
+                    <button class="btn btn-red" onclick="modifyStock('reduce')" style="font-size: 10px;">➖ اسٹاک کم کریں</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. SALES REPORTS SECTION -->
+        <button class="btn btn-orange" onclick="toggleSection('salesReportsContainer')" style="margin-top: 8px; width: 100%;">📊 سیلز رپورٹس (Show/Hide Reports)</button>
+        <div id="salesReportsContainer" class="panel-box" style="display: none;">
+            <div style="font-weight: bold; font-size: 11px; margin-bottom: 6px; color: #00796b; text-align: center;">📊 سیلز رپورٹس (گیلری اور پرنٹ)</div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <div style="display: flex; gap: 4px; align-items: center; background: #f8fafc; padding: 4px; border-radius: 4px;">
+                    <span style="font-size: 11px; font-weight: bold; width: 60px;">ڈیلی:</span>
+                    <button class="btn btn-teal" onclick="exportSalesReportAsImage('daily')" style="font-size: 10px;">📷 گیلری</button>
+                    <button class="btn btn-blue" onclick="printSalesReport('daily')" style="font-size: 10px;">📄 پرنٹ</button>
+                </div>
+                <div style="display: flex; gap: 4px; align-items: center; background: #f8fafc; padding: 4px; border-radius: 4px;">
+                    <span style="font-size: 11px; font-weight: bold; width: 60px;">ویکلی:</span>
+                    <button class="btn btn-orange" onclick="exportSalesReportAsImage('weekly')" style="font-size: 10px;">📷 گیلری</button>
+                    <button class="btn btn-orange" onclick="printSalesReport('weekly')" style="font-size: 10px;">📄 پرنٹ</button>
+                </div>
+                <div style="display: flex; gap: 4px; align-items: center; background: #f8fafc; padding: 4px; border-radius: 4px;">
+                    <span style="font-size: 11px; font-weight: bold; width: 60px;">ماہانہ:</span>
+                    <button class="btn btn-purple" onclick="exportSalesReportAsImage('monthly')" style="font-size: 10px;">📷 گیلری</button>
+                    <button class="btn btn-purple" onclick="printSalesReport('monthly')" style="font-size: 10px;">📄 پرنٹ</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. BILL HISTORY SECTION -->
+        <button class="btn btn-purple" onclick="toggleSection('billsHistoryContainer')" style="margin-top: 8px; width: 100%;">📁 محفوظ شدہ بلز ہسٹری (Show/Hide History)</button>
+        <div id="billsHistoryContainer" class="panel-box" style="display: none; max-height: 200px; overflow-y: auto;">
+            <table class="history-table">
+                <thead>
+                    <tr><th>بل نمبر</th><th>تاریخ</th><th>کسٹمر</th><th>کل رقم</th><th>آپشنز</th></tr>
+                </thead>
+                <tbody id="historyTableBody">
+                    <tr><td colspan="5">کوئی محفوظ شدہ بل موجود نہیں</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
-<div class="box">
-<h2>Hamari Services</h2>
-<div class="services">
-<div class="service"><b>🏗️ Ghar ki Tameer</b><br>Mukammal Construction</div>
-<div class="service"><b>📐 Nakshe</b><br>Jadeed Design</div>
-<div class="service"><b>🧱 Material</b><br>Aala Quality</div>
-<div class="service"><b>👷 Mazdoor</b><br>Mahir Karigar</div>
-</div>
+<div class="action-buttons no-print">
+    <button class="btn btn-blue" onclick="window.print()">🖨️ پرنٹ</button>
+    <button class="btn btn-teal" onclick="saveCustomerBillAsImage()">🖼️ گیلری بل</button>
+    <button class="btn btn-orange" onclick="printRawBT()">📱 RawBT</button>
+    <button class="btn-green btn" onclick="saveBillAndSync()">💾 بل سیو</button>
+    <button class="btn btn-red" onclick="resetForm()">🧹 نیا بل</button>
 </div>
 
-<div class="box">
-<h2>Kyoun Hamain Chunen?</h2>
-<p>✅ 10+ Saal ka Tajurba<br>✅ Munasib Rates<br>✅ Waqt par Kaam<br>✅ Gojra aur Faisalabad me Service</p>
-</div>
+<!-- Hidden Export Container for Reports -->
+<div id="exportContainer" style="position: absolute; left: -9999px; top: 0; background: #fff; padding: 20px; width: 500px; direction: rtl;"></div>
 
-<div class="box contact">
-<h2 style="color:#ff9900">Rabta Karein</h2>
-<p style="font-size:18px;margin:15px 0">📍 Gojra, District Toba Tek Singh, Faisalabad</p>
-<p style="font-size:18px">📞 Phone: 0300-XXXXXXX</p>
-<br>
-<a class="btn" href="tel:03000000000">📞 Call Now</a>
-<a class="btn whatsapp" href="https://wa.me/923000000000">💬 WhatsApp</a>
-</div>
+<script>
+    const firebaseConfig = {
+        databaseURL: "https://sultan-bricks-default-rtdb.firebaseio.com/"
+    };
 
-<div class="box" style="background:#ff6600;color:white">
-<p><b>Bright Home Builders Gojra</b><br>Apke Khwabon ka Ghar - Hamari Zimmedari</p>
-</div>
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const dbRef = firebase.database().ref('bright_homes_db');
+
+    let stock = {
+        "Awal Eent (اول اینٹ)": 0,
+        "Doem Eent (دوئم اینٹ)": 0,
+        "Dara Eent (دڑا اینٹ)": 0,
+        "Rora (روڑا)": 0,
+        "Tile (ٹائیل)": 0,
+        "Cement (سیمنٹ)": 0,
+        "Bajri (بجری)": 0,
+        "Ret (ریت)": 0
+    };
+
+    let baseCosts = {
+        "Awal Eent (اول اینٹ)": 15,
+        "Doem Eent (دوئم اینٹ)": 12,
+        "Dara Eent (دڑا اینٹ)": 10,
+        "Rora (روڑا)": 8,
+        "Tile (ٹائیل)": 30,
+        "Cement (سیمنٹ)": 1200,
+        "Bajri (بجری)": 60,
+        "Ret (ریت)": 40
+    };
+
+    let billCounter = 1;
+    let savedBillsList = [];
+    let isInitialLoad = true;
+
+    document.getElementById('billDate').valueAsDate = new Date();
+    updateBillNumbers();
+
+    dbRef.on('value', (snapshot) => {
+        let serverData = snapshot.val();
+        if (serverData) {
+            if (serverData.stock) stock = serverData.stock;
+            if (serverData.bills) savedBillsList = serverData.bills;
+            if (serverData.billCounter !== undefined && serverData.billCounter !== null) {
+                if (isInitialLoad) {
+                    billCounter = serverData.billCounter;
+                }
+            }
+            document.getElementById('syncStatus').innerText = "فائر بیس لائیو سنک فعال ہے 🟢 (متصل)";
+        } else {
+            syncToFirebase();
+        }
+        isInitialLoad = false;
+        updateStockUI();
+        updateBillNumbers();
+        loadHistoryTable();
+    }, (error) => {
+        document.getElementById('syncStatus').innerText = "آف لائن موڈ 🟡";
+        isInitialLoad = false;
+        updateBillNumbers();
+    });
+
+    function syncToFirebase() {
+        dbRef.set({
+            stock: stock,
+            bills: savedBillsList,
+            billCounter: billCounter
+        }).catch(e => console.log(e));
+    }
+
+    function updateBillNumbers() {
+        if (!billCounter || billCounter < 1) billCounter = 1;
+        let formattedNo = billCounter < 10 ? "0" + billCounter : billCounter;
+        document.getElementById('billNo').value = "BH-" + formattedNo;
+    }
+
+    function updateStockUI() {
+        for(let key in stock) {
+            let safeKey = key.split(' ')[0].toLowerCase();
+            let el = document.getElementById('stock_' + safeKey);
+            if(el) el.innerText = (stock[key] || 0).toLocaleString();
+        }
+    }
+
+    function toggleSection(id) {
+        let el = document.getElementById(id);
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function modifyStock(mode) {
+        let item = document.getElementById('stockItem').value;
+        let qty = parseFloat(document.getElementById('stockQty').value) || 0;
+        if(qty <= 0) {
+            alert("براہ کرم درست تعداد درج کریں!");
+            return;
+        }
+
+        if(mode === 'add') {
+            stock[item] = (stock[item] || 0) + qty;
+            alert("نیا اسٹاک کامیابی سے شامل کر دیا گیا ہے!");
+        } else if(mode === 'reduce') {
+            stock[item] = Math.max(0, (stock[item] || 0) - qty);
+            alert("اسٹاک کامیابی سے کم کر دیا گیا ہے!");
+        }
+
+        syncToFirebase();
+        updateStockUI();
+        document.getElementById('stockQty').value = '';
+    }
+
+    function editStockDirect(itemName) {
+        let currentVal = stock[itemName] || 0;
+        let newVal = prompt(`(${itemName}) کا نیا درست اسٹاک درج کریں:`, currentVal);
+        if(newVal !== null) {
+            let parsedVal = parseFloat(newVal);
+            if(!isNaN(parsedVal) && parsedVal >= 0) {
+                stock[itemName] = parsedVal;
+                syncToFirebase();
+                updateStockUI();
+                alert("اسٹاک کامیابی سے اپڈیٹ کر دیا گیا ہے!");
+            } else {
+                alert("براہ کرم درست ہندسہ درج کریں!");
+            }
+        }
+    }
+
+    function addItem() {
+        let tbody = document.getElementById('itemsBody');
+        let newRow = document.createElement('tr');
+        newRow.className = 'item-row';
+        newRow.innerHTML = `
+            <td>
+                <select class="item-select" onchange="calculateTotal()">
+                    <option value="" disabled selected>آئٹم منتخب کریں</option>
+                    <option value="Awal Eent (اول اینٹ)">Awal Eent (اول اینٹ)</option>
+                    <option value="Doem Eent (دوئم اینٹ)">Doem Eent (دوئم اینٹ)</option>
+                    <option value="Dara Eent (دڑا اینٹ)">Dara Eent (دڑا اینٹ)</option>
+                    <option value="Rora (روڑا)">Rora (روڑا)</option>
+                    <option value="Tile (ٹائیل)">Tile (ٹائیل)</option>
+                    <option value="Cement (سیمنٹ)">Cement (سیمنٹ)</option>
+                    <option value="Bajri (بجری)">Bajri (بجری)</option>
+                    <option value="Ret (ریت)">Ret (ریت)</option>
+                </select>
+            </td>
+            <td>
+                <div class="qty-rate-box">
+                    <input type="number" class="item-qty" placeholder="تعداد" oninput="calculateTotal()"> 
+                    <span>×</span> 
+                    <input type="number" class="item-rate" placeholder="نرخ" oninput="calculateTotal()">
+                </div>
+            </td>
+            <td class="item-amount" style="font-weight:bold;">Rs 0</td>
+            <td class="no-print no-print-col"><button class="btn-del" onclick="deleteRow(this)">❌</button></td>
+        `;
+        tbody.appendChild(newRow);
+    }
+
+    function deleteRow(btn) {
+        let row = btn.closest('tr');
+        if(document.querySelectorAll('.item-row').length > 1) {
+            row.remove();
+            calculateTotal();
+        } else {
+            alert("کم از کم ایک آئٹم ضروری ہے!");
+        }
+    }
+
+    function calculateTotal() {
+        let rows = document.querySelectorAll('.item-row');
+        let subTotal = 0;
+        let totalCost = 0;
+
+        rows.forEach(row => {
+            let qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+            let rate = parseFloat(row.querySelector('.item-rate').value) || 0;
+            let amt = qty * rate;
+            row.querySelector('.item-amount').innerText = "Rs " + amt.toLocaleString();
+            subTotal += amt;
+
+            let itemName = row.querySelector('.item-select').value;
+            let costPrice = baseCosts[itemName] || 0;
+            totalCost += (qty * costPrice);
+        });
+
+        let rent = parseFloat(document.getElementById('rent').value) || 0;
+        let labor = parseFloat(document.getElementById('labor').value) || 0;
+        let discount = parseFloat(document.getElementById('discount').value) || 0;
+
+        let grandTotal = (subTotal + rent + labor) - discount;
+        document.getElementById('grandTotal').innerText = "Rs " + grandTotal.toLocaleString();
+
+        let estimatedProfit = subTotal - totalCost;
+        document.getElementById('quickProfitView').innerText = "اندازاً منافع: Rs " + estimatedProfit.toLocaleString();
+
+        let paid = parseFloat(document.getElementById('paidAmount').value) || 0;
+        let remaining = grandTotal - paid;
+        let remEl = document.getElementById('remainingBalance');
+        remEl.innerText = 'Rs ' + remaining.toLocaleString();
+        remEl.style.color = remaining > 0 ? '#d32f2f' : '#2e7d32';
+    }
+
+    function saveBillAndSync() {
+        let billNo = document.getElementById('billNo').value;
+        let cName = document.getElementById('cName').value.trim();
+        if (!cName) {
+            alert('براہ کرم کسٹمر کا نام درج کریں!');
+            return;
+        }
+
+        let grandTotalStr = document.getElementById('grandTotal').innerText.replace('Rs ', '').replace(/,/g, '');
+        let grandTotal = parseFloat(grandTotalStr) || 0;
+
+        let items = [];
+        let totalCost = 0;
+        let subTotal = 0;
+
+        document.querySelectorAll('.item-row').forEach(row => {
+            let itemDesc = row.querySelector('.item-select').value;
+            let qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+            let rate = parseFloat(row.querySelector('.item-rate').value) || 0;
+            if (itemDesc && qty > 0) {
+                let amt = qty * rate;
+                items.push({ item: itemDesc, qty: qty, rate: rate, amount: amt });
+                subTotal += amt;
+                totalCost += (qty * (baseCosts[itemDesc] || 0));
+
+                if (stock[itemDesc] !== undefined) {
+                    stock[itemDesc] = Math.max(0, stock[itemDesc] - qty);
+                }
+            }
+        });
+
+        let billData = {
+            billNo: billNo,
+            date: document.getElementById('billDate').value,
+            name: cName,
+            mobile: document.getElementById('cMobile').value || '-',
+            address: document.getElementById('cAddress').value || '-',
+            gaari: document.getElementById('cGaari').value || '-',
+            items: items,
+            grandTotal: grandTotal,
+            profit: subTotal - totalCost,
+            paid: parseFloat(document.getElementById('paidAmount').value) || 0,
+            remaining: grandTotal - (parseFloat(document.getElementById('paidAmount').value) || 0)
+        };
+
+        savedBillsList.unshift(billData);
+        billCounter++;
+
+        syncToFirebase();
+        alert('بل کامیابی سے محفوظ اور لائیو سنک ہو گیا ہے! بل نمبر: ' + billNo);
+        resetForm();
+    }
+
+    function resetForm() {
+        updateBillNumbers();
+        document.getElementById('cName').value = '';
+        document.getElementById('cMobile').value = '';
+        document.getElementById('cAddress').value = '';
+        document.getElementById('cGaari').value = '';
+        document.getElementById('rent').value = '';
+        document.getElementById('labor').value = '';
+        document.getElementById('discount').value = '';
+        document.getElementById('paidAmount').value = '';
+        document.getElementById('itemsBody').innerHTML = `
+            <tr class="item-row">
+                <td>
+                    <select class="item-select" onchange="calculateTotal()">
+                        <option value="" disabled selected>آئٹم منتخب کریں</option>
+                        <option value="Awal Eent (اول اینٹ)">Awal Eent (اول اینٹ)</option>
+                        <option value="Doem Eent (دوئم اینٹ)">Doem Eent (دوئم اینٹ)</option>
+                        <option value="Dara Eent (دڑا اینٹ)">Dara Eent (دڑا اینٹ)</option>
+                        <option value="Rora (روڑا)">Rora (روڑا)</option>
+                        <option value="Tile (ٹائیل)">Tile (ٹائیل)</option>
+                        <option value="Cement (سیمنٹ)">Cement (سیمنٹ)</option>
+                        <option value="Bajri (بجری)">Bajri (بجری)</option>
+                        <option value="Ret (ریت)">Ret (ریت)</option>
+                    </select>
+                </td>
+                <td>
+                    <div class="qty-rate-box">
+                        <input type="number" class="item-qty" placeholder="تعداد" oninput="calculateTotal()"> 
+                        <span>×</span> 
+                        <input type="number" class="item-rate" placeholder="نرخ" oninput="calculateTotal()">
+                    </div>
+                </td>
+                <td class="item-amount" style="font-weight:bold;">Rs 0</td>
+                <td class="no-print no-print-col"><button class="btn-del" onclick="deleteRow(this)">❌</button></td>
+            </tr>
+        `;
+        calculateTotal();
+    }
+
+    function loadHistoryTable() {
+        let tbody = document.getElementById('historyTableBody');
+        tbody.innerHTML = '';
+        if(savedBillsList.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5">کوئی محفوظ شدہ بل موجود نہیں</td></tr>`;
+            return;
+        }
+        savedBillsList.forEach((b, index) => {
+            let tr = document.createElement('tr');
+            tr.innerHTML = `<td><b>${b.billNo}</b></td><td>${b.date}</td><td>${b.name || b.cName}</td><td>Rs ${(b.grandTotal || 0).toLocaleString()}</td><td><button onclick='printSavedBill(${index})' style='background:#0066cc; color:#fff; border:none; padding:3px 5px; border-radius:3px; cursor:pointer; font-size:9px;'>پرنٹ</button> <button onclick='deleteBill(${index})' style='background:#d32f2f; color:#fff; border:none; padding:3px 5px; border-radius:3px; cursor:pointer; font-size:9px;'>ختم</button></td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function deleteBill(index) {
+        if(confirm("کیا آپ واقعی اس بل کو ختم کرنا چاہتے ہیں؟")) {
+            savedBillsList.splice(index, 1);
+            syncToFirebase();
+            loadHistoryTable();
+        }
+    }
+
+    function printSavedBill(index) {
+        let b = savedBillsList[index];
+        let itemsHTML = '';
+        if (Array.isArray(b.items)) {
+            b.items.forEach(i => {
+                itemsHTML += `<tr><td>${i.item}</td><td>${i.qty}</td><td>Rs ${i.rate}</td><td>Rs ${i.amount.toLocaleString()}</td></tr>`;
+            });
+        } else {
+            itemsHTML += `<tr><td colspan="4">${b.items || 'تفصیل موجود نہیں'}</td></tr>`;
+        }
+
+        let pWin = window.open('', '', 'height=600,width=800');
+        pWin.document.write(`
+            <html><head><title>Bill - ${b.billNo}</title>
+            <style>body{font-family:Arial; padding:20px; direction:rtl;} h2,h3,p{text-align:center; margin:2px;} table{width:100%; border-collapse:collapse; margin-top:15px;} th,td{border:1px solid #333; padding:6px; text-align:center; font-size:12px;}</style>
+            </head>
+            <body>
+                <h2>BRIGHT HOMES</h2>
+                <p>Office: Main Toba Road, Near Railway Station, Gojra[span_5](start_span)[span_5](end_span)</p>
+                <h3>BUILDER & BUILDING CONSTRUCTION MATERIALS COMPANY</h3>
+                <hr>
+                <p><b>Bill No:</b> ${b.billNo} | <b>Date:</b> ${b.date}</p>
+                <p><b>Customer:</b> ${b.name || b.cName} | <b>Mobile:</b> ${b.mobile || '-'}</p>
+                <p><b>Address:</b> ${b.address || '-'} | <b>Gaari No:</b> ${b.gaari || '-'}</p>
+                <table>
+                    <tr><th>Description</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>
+                    ${itemsHTML}
+                </table>
+                <p style="text-align:right; margin-top:10px;"><b>Grand Total: Rs ${(b.grandTotal || 0).toLocaleString()}</b></p>
+                <p style="text-align:right;">Paid: Rs ${(b.paid || 0).toLocaleString()} | Remaining: Rs ${(b.remaining || 0).toLocaleString()}</p>
+                <br><br>
+                <div style="text-align:right; font-weight:bold;">Authorized Signature: MIAN IMRAN RAMAY[span_6](start_span)[span_6](end_span)</div>
+                <p style="text-align:center; margin-top:20px; font-weight:bold;">Thanks for your trust Bright Homes[span_7](start_span)[span_7](end_span)</p>
+            </body></html>
+        `);
+        pWin.document.close();
+        pWin.print();
+    }
+
+    function saveCustomerBillAsImage() {
+        let card = document.getElementById('invoice');
+        card.classList.add('generating-image');
+        html2canvas(card, { scale: 2 }).then(canvas => {
+            card.classList.remove('generating-image');
+            let link = document.createElement('a');
+            link.download = `BrightHomes_${document.getElementById('billNo').value}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }).catch(err => {
+            card.classList.remove('generating-image');
+            alert("تصویر بنانے میں خرابی پیش آئی!");
+        });
+    }
+
+    function saveStockReportAsImage() {
+        let reportHTML = `
+            <div style="background:#fff; padding:15px; border:2px solid #222; font-family:Arial; direction:rtl;">
+                <h2 style="text-align:center; color:#003366; margin:0;">BRIGHT HOMES</h2>
+                <p style="text-align:center; font-size:11px; margin:2px;">موجودہ اسٹاک رپورٹ</p>
+                <hr style="margin:8px 0;">
+                <table class="gen-table">
+                    <tr><th>آئٹم</th><th>موجودہ اسٹاک</th></tr>`;
+        for(let key in stock) {
+            reportHTML += `<tr><td>${key}</td><td><b>${stock[key].toLocaleString()}</b></td></tr>`;
+        }
+        reportHTML += `</table><p style="text-align:center; font-size:10px; margin-top:10px;">MIAN IMRAN RAMAY | 03001070298[span_8](start_span)[span_8](end_span)</p></div>`;
+
+        let exp = document.getElementById('exportContainer');
+        exp.innerHTML = reportHTML;
+
+        html2canvas(exp, { scale: 2 }).then(canvas => {
+            let link = document.createElement('a');
+            link.download = `Stock_Report_${new Date().toISOString().slice(0,10)}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            exp.innerHTML = '';
+        });
+    }
+
+    function printDailyReport() {
+        let reportHTML = `<html><head><title>Daily Stock Report</title><style>body{font-family:Arial;padding:20px; direction:rtl;}h2,p{text-align:center;}table{width:100%;border-collapse:collapse;margin-top:20px;}th,td{border:1px solid #333;padding:8px;text-align:center;}</style></head><body>`;
+        reportHTML += `<h2>BRIGHT HOMES</h2><h3>Daily Stock Report / روزانہ اسٹاک رپورٹ</h3><p>Date: ${new Date().toLocaleDateString()}</p>`;
+        reportHTML += `<table><tr><th>Item Name</th><th>Remaining Stock</th></tr>`;
+        for(let key in stock) {
+            reportHTML += `<tr><td>${key}</td><td>${stock[key].toLocaleString()}</td></tr>`;
+        }
+        reportHTML += `</table><br><br><div style="text-align:right; font-weight:bold;">Authorized Signature: MIAN IMRAN RAMAY[span_9](start_span)[span_9](end_span)</div></body></html>`;
+        let win = window.open('', '', 'height=600,width=800');
+        win.document.write(reportHTML);
+        win.document.close();
+    }
+
+    function exportSalesReportAsImage(type) {
+        let todayStr = new Date().toISOString().slice(0,10);
+        let filteredBills = savedBillsList.filter(b => {
+            if (type === 'daily') return b.date === todayStr;
+            return true;
+        });
+
+        let totalSales = filteredBills.reduce((sum, b) => sum + (b.grandTotal || 0), 0);
+        let totalProfit = filteredBills.reduce((sum, b) => sum + (b.profit || 0), 0);
+
+        let reportHTML = `
+            <div style="background:#fff; padding:15px; border:2px solid #222; font-family:Arial; direction:rtl;">
+                <h2 style="text-align:center; color:#003366; margin:0;">BRIGHT HOMES</h2>
+                <p style="text-align:center; font-size:11px; margin:2px;">${type.toUpperCase()} SALES & PROFIT REPORT</p>
+                <hr style="margin:8px 0;">
+                <p><b>کل بلز:</b> ${filteredBills.length} | <b>کل فروخت:</b> Rs ${totalSales.toLocaleString()}</p>
+                <p><b>کل منافع:</b> Rs ${totalProfit.toLocaleString()}</p>
+                <table class="gen-table" style="margin-top:10px;">
+                    <tr><th>بل نمبر</th><th>کسٹمر</th><th>رقم</th><th>منافع</th></tr>`;
+        
+        filteredBills.forEach(b => {
+            reportHTML += `<tr><td>${b.billNo}</td><td>${b.name || '-'}</td><td>Rs ${(b.grandTotal||0).toLocaleString()}</td><td>Rs ${(b.profit||0).toLocaleString()}</td></tr>`;
+        });
+
+        reportHTML += `</table><p style="text-align:center; font-size:10px; margin-top:10px;">MIAN IMRAN RAMAY | 03001070298[span_10](start_span)[span_10](end_span)</p></div>`;
+
+        let exp = document.getElementById('exportContainer');
+        exp.innerHTML = reportHTML;
+
+        html2canvas(exp, { scale: 2 }).then(canvas => {
+            let link = document.createElement('a');
+            link.download = `Sales_Report_${type}_${todayStr}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            exp.innerHTML = '';
+        });
+    }
+
+    function printSalesReport(type) {
+        let todayStr = new Date().toISOString().slice(0,10);
+        let filteredBills = savedBillsList.filter(b => {
+            if (type === 'daily') return b.date === todayStr;
+            return true;
+        });
+
+        let totalSales = filteredBills.reduce((sum, b) => sum + (b.grandTotal || 0), 0);
+        let totalProfit = filteredBills.reduce((sum, b) => sum + (b.profit || 0), 0);
+
+        let reportHTML = `<html><head><title>${type} Report</title><style>body{font-family:Arial;padding:20px; direction:rtl;}h2,p{text-align:center;}table{width:100%;border-collapse:collapse;margin-top:20px;}th,td{border:1px solid #333;padding:8px;text-align:center;}</style></head><body>`;
+        reportHTML += `<h2>BRIGHT HOMES</h2><h3>${type.toUpperCase()} Sales Report</h3>`;
+        reportHTML += `<p><b>کل بلز:</b> ${filteredBills.length} | <b>کل فروخت:</b> Rs ${totalSales.toLocaleString()} | <b>کل منافع:</b> Rs ${totalProfit.toLocaleString()}</p>`;
+        reportHTML += `<table><tr><th>بل نمبر</th><th>تاریخ</th><th>کسٹمر</th><th>رقم</th><th>منافع</th></tr>`;
+        
+        filteredBills.forEach(b => {
+            reportHTML += `<tr><td>${b.billNo}</td><td>${b.date}</td><td>${b.name || '-'}</td><td>Rs ${(b.grandTotal||0).toLocaleString()}</td><td>Rs ${(b.profit||0).toLocaleString()}</td></tr>`;
+        });
+
+        reportHTML += `</table><br><br><div style="text-align:right; font-weight:bold;">Authorized Signature: MIAN IMRAN RAMAY[span_11](start_span)[span_11](end_span)</div></body></html>`;
+        let win = window.open('', '', 'height=600,width=800');
+        win.document.write(reportHTML);
+        win.document.close();
+    }
+
+    function printRawBT() {
+        let bNo = document.getElementById('billNo').value;
+        let cName = document.getElementById('cName').value || 'Walk-in Customer';
+        let cMob = document.getElementById('cMobile').value || '';
+        let total = document.getElementById('grandTotal').innerText;
+        
+        let text = `BRIGHT HOMES\nGojra | 03001070298\n--------------------\nBill: ${bNo}\nCustomer: ${cName}\nMob: ${cMob}\n--------------------\nTotal: ${total}\n--------------------\nThanks for your trust Bright Homes\n\n`;
+        
+        let url = "rawbt:data:text/plain;charset=utf-8," + encodeURIComponent(text);
+        window.location.href = url;
+    }
+</script>
+
 </body>
 </html>
